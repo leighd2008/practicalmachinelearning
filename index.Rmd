@@ -102,7 +102,7 @@ testset  <- testsub[, -(1:7)]
 
 ## Building the model
 ### Cross-Validation
-To allow for validation of the model prior to using it to assess the 20 test cases, we will split the data 70:30 into a training set and a validation set.
+To allow for validation of the model prior to using it to assess the 20 test cases, we will split the data 70:30 into a training set and a validation set. The training set will be used to build the model and the validation set will be used to estimate the out of sample error rate via the confusion matrix (~ 1- accuracy).
 
 ```{r train_val}
 ## separate training set into both a training set(70%) and a validation set(30%).

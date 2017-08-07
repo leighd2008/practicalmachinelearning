@@ -160,7 +160,7 @@ numNAs &lt;- NULL
 for(i in 1:ncol(training)){
      numNAs[i] &lt;- sum(is.na(training[,i]))
 }</code></pre>
-<p>Training data was downloaded: Mon Aug 07 08:46:52 2017 Testing data was downloaded: Mon Aug 07 08:46:55 2017</p>
+<p>Training data was downloaded: Mon Aug 07 09:29:30 2017 Testing data was downloaded: Mon Aug 07 09:29:32 2017</p>
 </div>
 <div id="clean-up-the-data" class="section level2">
 <h2>Clean up the data:</h2>
@@ -197,7 +197,7 @@ testset  &lt;- testsub[, -(1:7)]</code></pre>
 <h2>Building the model</h2>
 <div id="cross-validation" class="section level3">
 <h3>Cross-Validation</h3>
-<p>To allow for validation of the model prior to using it to assess the 20 test cases, we will split the data 70:30 into a training set and a validation set.</p>
+<p>To allow for validation of the model prior to using it to assess the 20 test cases, we will split the data 70:30 into a training set and a validation set. The training set will be used to build the model and the validation set will be used to estimate the out of sample error rate via the confusion matrix (~ 1- accuracy).</p>
 <pre class="r"><code>## separate training set into both a training set(70%) and a validation set(30%).
 set.seed(8918)
 intrain &lt;- createDataPartition(y = trainset$classe, p = 0.7, list = F)
@@ -329,7 +329,7 @@ cmgbm</code></pre>
 xt &lt;- xtable(modelacc, caption = &quot;Table 3: Comparison of Prediction Models&quot;, align = &quot;cccccccc&quot;)
 print(xt, type = &quot;html&quot;, include.rownames = TRUE, caption.placement = &quot;top&quot;)</code></pre>
 <!-- html table generated in R 3.4.0 by xtable 1.8-2 package -->
-<!-- Mon Aug 07 08:51:21 2017 -->
+<!-- Mon Aug 07 09:34:03 2017 -->
 <table border="1">
 <caption align="top">
 Table 3: Comparison of Prediction Models

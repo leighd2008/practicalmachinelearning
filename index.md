@@ -58,8 +58,8 @@ for(i in 1:ncol(training)){
 }
 ```
 
-Training data was downloaded: Mon Aug 07 08:46:52 2017
-Testing data was downloaded: Mon Aug 07 08:46:55 2017
+Training data was downloaded: Mon Aug 07 09:29:30 2017
+Testing data was downloaded: Mon Aug 07 09:29:32 2017
 
 ## Clean up the data:
 There are 160 variables in the testing set. However, many of these variables have a large proportion of NAs. 
@@ -103,7 +103,7 @@ testset  <- testsub[, -(1:7)]
 
 ## Building the model
 ### Cross-Validation
-To allow for validation of the model prior to using it to assess the 20 test cases, we will split the data 70:30 into a training set and a validation set.
+To allow for validation of the model prior to using it to assess the 20 test cases, we will split the data 70:30 into a training set and a validation set. The training set will be used to build the model and the validation set will be used to estimate the out of sample error rate via the confusion matrix (~ 1- accuracy).
 
 
 ```r
@@ -281,7 +281,7 @@ print(xt, type = "html", include.rownames = TRUE, caption.placement = "top")
 ```
 
 <!-- html table generated in R 3.4.0 by xtable 1.8-2 package -->
-<!-- Mon Aug 07 08:51:21 2017 -->
+<!-- Mon Aug 07 09:34:03 2017 -->
 <table border=1>
 <caption align="top"> Table 3: Comparison of Prediction Models </caption>
 <tr> <th>  </th> <th> Accuracy </th> <th> Kappa </th> <th> AccuracyLower </th> <th> AccuracyUpper </th> <th> AccuracyNull </th> <th> AccuracyPValue </th> <th> McnemarPValue </th>  </tr>
