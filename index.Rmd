@@ -7,24 +7,164 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+# ipak function: install and load multiple R packages.
+# check to see if packages are installed. Install them if they are not, then load them into the R session.
+
+ipak <- function(pkg){
+    new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+    if (length(new.pkg)) 
+        install.packages(new.pkg, dependencies = TRUE)
+    sapply(pkg, require, character.only = TRUE)
+}
+
+packages <- c("plyr","tidyverse", "MASS", "leaps", "tree", "caret", "rpart", "randomForest", "corrplot", "xtable", "knitr", "gbm", "rattle", "rpart.plot")
+ipak(packages)
 ```
 
-## R Markdown
+## Background
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+This human activity recognition research has traditionally focused on discriminating between different activities, i.e. to predict "which" activity was performed at a specific point in time (like with the Daily Living Activities dataset above). The approach we propose for the Weight Lifting Exercises dataset is to investigate "how (well)" an activity was performed by the wearer. The "how (well)" investigation has only received little attention so far, even though it potentially provides useful information for a large variety of applications,such as sports training.
 
-```{r cars}
-summary(cars)
+In this work (see the paper) we first define quality of execution and investigate three aspects that pertain to qualitative activity recognition: the problem of specifying correct execution, the automatic and robust detection of execution mistakes, and how to provide feedback on the quality of execution to the user. We tried out an on-body sensing approach (dataset here), but also an "ambient sensing approach" (by using Microsoft Kinect - dataset still unavailable)
+
+Six young health participants were asked to perform one set of 10 repetitions of the Unilateral Dumbbell Biceps Curl in five different fashions: 
+
+Class A exactly according to the specification  
+Class B throwing the elbows to the front  
+Class C lifting the dumbbell only halfway  
+Class D lowering the dumbbell only halfway   
+Class E throwing the hips to the front  
+
+Class A corresponds to the specified execution of the exercise, while the other 4 classes correspond to common mistakes. Participants were supervised by an experienced weight lifter to make sure the execution complied to the manner they were supposed to simulate. The exercises were performed by six male participants aged between 20-28 years, with little weight lifting experience. We made sure that all participants could easily simulate the mistakes in a safe and controlled manner by using a relatively light dumbbell (1.25kg).
+
+Read more: http://webcache.googleusercontent.com/search?q=cache:http://groupware.les.inf.puc-rio.br/har#ixzz4oE68kWcT
+
+The training data for this project are available here:
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here:
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The data for this project come from this source: http://groupware.les.inf.puc-rio.br/har. 
+
+The goal of this project is to predict the manner in which they did the exercise. This is the "classe" variable (levels A, B, C, D, E) in the training set. 
+
+```{r load_data, results="asis", cache=TRUE}
+## Read training and testing data sets, replacing all empty cells with NA.
+fileUrlTrain <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+if(!file.exists("Training.csv")){
+     download.file(fileUrlTrain, "Training.csv")
+     dateTrainingDownloaded <- date()
+}
+training <- read.csv("Training.csv", na.strings=c('','NA'))
+
+fileUrlTest <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+if(!file.exists("Testing.csv")){
+     download.file(fileUrlTest, "Testing.csv")
+     dateTestingDownloaded <- date()
+}
+
+testing <- read.csv("Testing.csv", na.strings=c('','NA'))
+
+numNAs <- NULL
+for(i in 1:ncol(training)){
+     numNAs[i] <- sum(is.na(training[,i]))
+}
 ```
 
-## Including Plots
+Training data was downloaded: `{r dateTrainingDownloaded}`
+Testing data was downloaded: `{r dateTestingDownloaded}`
 
-You can also embed plots, for example:
+## Clean up the data:
+There are 160 variables in the testing set. However, many of these variables have a large proportion of NAs. 
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+###Table 1: Number of NAs per column
+```{r numNAs}
+numNAs
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+A subset of both the training and testing data containing only those variables without NAs will be used for the model building and testing. Columns containing identification information (1-7) only are also removed.
+```{r cleanup}
+trainsub <- training[,!apply(training,2,function(x) any(is.na(x)))]
+testsub <- testing[,!apply(testing,2,function(x) any(is.na(x)))]
+
+# remove columns containing identification only variables (1 to 6)
+trainset <- trainsub[, -(1:7)]
+testset  <- testsub[, -(1:7)]
+
+```
+
+**Note:** Both the training set and the testing set have 53 variables. However there is no classe variable in the testing set. There is a variable named problem_id in the testing set.
+
+## Building the model
+### Cross-Validation
+To allow for validation of the model prior to using it to assess the 20 test cases, we will split the data 70:30 into a training set and a validation set.
+
+```{r train_val}
+## separate training set into both a training set(70%) and a validation set(30%).
+set.seed(8918)
+intrain <- createDataPartition(y = trainset$classe, p = 0.7, list = F)
+train <- trainset[intrain,]
+validation <- trainset[-intrain,]
+```
+We now have 53 predictor variable plus the classe variable in our training and validation sets. lets look for any correllation between the predictor variables.
+
+```{r corr, results="asis", fig.width= 7, fig.height= 9}
+corMatrix <- cor(trainset[, -53])
+corrplot(corMatrix, order = "FPC", method = "color", type = "lower",
+         tl.cex = 0.8, tl.col = rgb(0, 0, 0), mar=c(0,0,2,0), 
+         title = "Figure 1: Correlation Matrix for Remaining Predictor Variables")
+
+```
+
+High correlation is associated with dark blue color, which we do not see in the plot, so we will keep the remaining 53 predictor variables for the model building process.
+
+Recursive partitioning, Random Forest and Generalized Boosted methods will be used to define prediction models based on the train data set, and then tested on the validation data set. The model with the highest accuracy will then be appllied to the testsub data set.
+
+```{r recpart}
+set.seed(48648)
+tree.train <- rpart(classe~., train, method = "class")
+prp(tree.train, main = "Figure 2: Recursive partitioning Model Tree")
+tree.pred <- predict(tree.train , validation ,type="class")
+cmtree <- confusionMatrix(tree.pred, validation$classe)
+cmtree
+```
+
+```{r rndfst}
+set.seed(48648)
+rndfst.train <- randomForest(classe ~ ., train)
+varImpPlot(rndfst.train, main = "Figure 3: Variable Importance plot for Random Forest Model")
+rndfst.pred <- predict(rndfst.train, validation, type = "class")
+cmrndfst <- confusionMatrix(rndfst.pred, validation$classe)
+cmrndfst
+
+```
+
+
+```{r boost}
+set.seed(48648)
+bstcntl <- trainControl(method = "repeatedcv", number = 5, repeats = 1)
+gbm.train <- train(classe ~ ., train, method = "gbm", trControl = bstcntl,
+                 verbose = FALSE)
+gbm.pred <- predict(gbm.train, validation)
+cmgbm <- confusionMatrix(gbm.pred, validation$classe)
+cmgbm
+
+```
+
+```{r mdlcmp, results="asis"}
+modelacc <- as.data.frame(rbind(cmtree$overall, cmrndfst$overall, cmgbm$overall), row.names = c("Recursive partitioning", "Random Forest", "Generalized Boosting"))
+xt <- xtable(modelacc, caption = "Table 3: Comparison of Prediction Models", align = "cccccccc")
+print(xt, type = "html", include.rownames = TRUE, caption.placement = "top")
+```
+
+##Conclussion
+The Random Forest Model gave the highest accuracy rate for the validation set, and will now be used to assign the classe variable to the test set.
+
+```{r test}
+test.pred <- predict(rndfst.train, testset, type = "class")
+test.pred
+```
+
