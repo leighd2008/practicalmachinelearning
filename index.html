@@ -160,7 +160,7 @@ numNAs &lt;- NULL
 for(i in 1:ncol(training)){
      numNAs[i] &lt;- sum(is.na(training[,i]))
 }</code></pre>
-<p>Training data was downloaded: <code>{r dateTrainingDownloaded}</code> Testing data was downloaded: <code>{r dateTestingDownloaded}</code></p>
+<p>Training data was downloaded: Mon Aug 07 08:23:41 2017 Testing data was downloaded: Mon Aug 07 08:23:43 2017</p>
 </div>
 <div id="clean-up-the-data" class="section level2">
 <h2>Clean up the data:</h2>
@@ -329,7 +329,7 @@ cmgbm</code></pre>
 xt &lt;- xtable(modelacc, caption = &quot;Table 3: Comparison of Prediction Models&quot;, align = &quot;cccccccc&quot;)
 print(xt, type = &quot;html&quot;, include.rownames = TRUE, caption.placement = &quot;top&quot;)</code></pre>
 <!-- html table generated in R 3.4.0 by xtable 1.8-2 package -->
-<!-- Mon Aug 07 07:49:42 2017 -->
+<!-- Mon Aug 07 08:28:11 2017 -->
 <table border="1">
 <caption align="top">
 Table 3: Comparison of Prediction Models

@@ -74,8 +74,8 @@ for(i in 1:ncol(training)){
 }
 ```
 
-Training data was downloaded: `{r dateTrainingDownloaded}`
-Testing data was downloaded: `{r dateTestingDownloaded}`
+Training data was downloaded: `r dateTrainingDownloaded`
+Testing data was downloaded: `r dateTestingDownloaded`
 
 ## Clean up the data:
 There are 160 variables in the testing set. However, many of these variables have a large proportion of NAs. 
